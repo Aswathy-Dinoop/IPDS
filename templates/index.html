@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDPS Dashboard | Neural Shield</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><span class="pulse">●</span> NEURAL SHIELD <small>Based on CNN & Scapy</small></h1>
+            <div id="status-indicator" class="status offline">OFFLINE</div>
+        </header>
+
+        <section class="controls">
+            <button id="start-btn" onclick="startSniffer()">ACTIVATE DEFENSE SYSTEM</button>
+        </section>
+
+        <section class="stats-grid">
+            <div class="card">
+                <h3>Total Threats Detected</h3>
+                <div class="big-number" id="total-attacks">0</div>
+            </div>
+            <div class="card">
+                <h3>Active Blocks</h3>
+                <div class="big-number" id="blocked-ips">0</div>
+            </div>
+            <div class="card chart-card">
+                <h3>Attack Distribution</h3>
+                <canvas id="attackChart"></canvas>
+            </div>
+        </section>
+
+        <section class="live-feed">
+            <h2>Real-Time Intrusion Logs</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Source IP</th>
+                        <th>Target IP</th>
+                        <th>Proto</th>
+                        <th>Type</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="logs-body">
+                    <!-- Rows injected by JS -->
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
