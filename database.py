@@ -53,6 +53,13 @@ def get_stats():
     conn.close()
     return total_attacks, dict(types)
 
+def clear_all_logs():
+    conn = sqlite3.connect(DB_PATH, timeout=10)
+    c = conn.cursor()
+    c.execute('DELETE FROM attacks')
+    conn.commit()
+    conn.close()
+
 # Initialize on module load
 if not os.path.exists(DB_PATH):
     init_db()

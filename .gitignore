@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Build / Dist
+dist/
+build/
+*.spec
+
+# ML / TensorFlow cache
+*.h5
+*.pb
+*.onnx
+
+# Database
+idps.db
+
+# Logs / Signals
+attack_signal.txt

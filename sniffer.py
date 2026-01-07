@@ -28,6 +28,11 @@ SCALER_PATH = os.path.join(os.path.dirname(__file__), 'model', 'scaler.pkl')
 BLOCKED_IPS = set()
 running = True
 
+def reset_blocked_ips():
+    global BLOCKED_IPS
+    BLOCKED_IPS.clear()
+    print("[*] Internal Blocked IPs list cleared.")
+
 # Load Model & Preprocessors
 print("Loading IDPS Model...")
 try:
@@ -193,10 +198,72 @@ def packet_callback(packet):
             # print(f"Normal packet: {src_ip}")
             pass
 
+def simulation_mode_sniffer():
+    """
+    Fallback mode for Windows systems without Npcap.
+    Monitors a signal file to detect when 'attack_simulation.py' is run,
+    and forwards that to the ML model.
+    """
+    print("[*] Sniffer running in SIMULATION/COMPATIBILITY mode.")
+    print("[*] Waiting for traffic from attack_simulation.py...")
+    
+    SIGNAL_FILE = os.path.join(os.path.dirname(__file__), 'attack_signal.txt')
+    
+    while running:
+        # 1. Check for explicit attack signals from simulation script
+        if os.path.exists(SIGNAL_FILE):
+            try:
+                with open(SIGNAL_FILE, 'r') as f:
+                    attack_type = f.read().strip()
+                
+                print(f"[!] Signal received: {attack_type}")
+                
+                # Create a mock packet based on the signal
+                if attack_type == 'DoS':
+                    # Simulated SYN Flood packet
+                    pkt = IP(src="192.168.1.100", dst="127.0.0.1")/TCP(dport=80, flags='S')
+                elif attack_type == 'PortScan':
+                    # Simulated Port Scan packet
+                    pkt = IP(src="192.168.1.101", dst="127.0.0.1")/TCP(dport=random.choice([21,22,80,443]), flags='S')
+                else:
+                    pkt = IP(src="192.168.1.200", dst="127.0.0.1")/TCP(dport=80, flags='PA')
+
+                # Process it through the ML pipeline
+                packet_callback(pkt)
+                
+                # Remove signal
+                os.remove(SIGNAL_FILE)
+            except Exception as e:
+                print(f"Error reading signal: {e}")
+        
+        # 2. Simulate random background 'Normal' traffic
+        else:
+            if random.random() < 0.2: # 20% chance every loop
+                # Normal HTTP traffic
+                pkt = IP(src=f"192.168.1.{random.randint(50,200)}", dst="127.0.0.1")/TCP(dport=80, flags='PA')
+                packet_callback(pkt)
+
+        time.sleep(0.5)
+
 def start_sniffer(interface=None):
-    print(f"[*] Starting Sniffer on {interface if interface else 'default interface'}...")
-    # Filter only IP traffic
-    sniff(prn=packet_callback, filter="ip", store=0, count=0)
+    print(f"[*] Starting Sniffer...")
+    
+    try:
+        # Try real sniffing first
+        # timeout=1 allows us to periodically check if 'running' is still True (if we were using a while loop)
+        # but sniff() is blocking. 
+        # We try to bind. if it fails immediately, we go to catch.
+        if os.name == 'nt':
+            # Windows compatibility check
+            print("[*] Attempting to bind to Scapy interface...")
+        
+        sniff(prn=packet_callback, filter="ip", store=0, count=0)
+        
+    except Exception as e:
+        print(f"\n[!] SCAPY SNIFFER ERROR: {e}")
+        print("[!] It seems you don't have Npcap installed or have interface issues.")
+        print("[*] Switching to FAULT-TOLERANT SIMULATION MODE so you can still demo the project.")
+        simulation_mode_sniffer()
 
 if __name__ == "__main__":
     # If run standalone

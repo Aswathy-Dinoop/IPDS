@@ -61,10 +61,22 @@ def start_sniffer_route():
         return jsonify({'status': 'started'})
     return jsonify({'status': 'already_running'})
 
+@app.route('/api/reset_stats')
+def reset_stats():
+    print("[DEBUG] Reset request received")
+    try:
+        database.clear_all_logs()
+        sniffer.reset_blocked_ips()
+        print("[DEBUG] Logs and blocked IPs cleared")
+        return jsonify({'message': 'All logs and blocked IPs cleared successfully', 'status': 'success'})
+    except Exception as e:
+        print(f"[ERROR] Reset failed: {e}")
+        return jsonify({'message': str(e), 'status': 'error'}), 500
+
 if __name__ == '__main__':
     # Initialize DB
     database.init_db()
     
     print("Starting Web Dashboard on http://127.0.0.1:5000")
-    app.run(debug=True, use_reloader=False) 
+    app.run(debug=True, use_reloader=True) 
     # use_reloader=False prevents double execution of sniffer if we put it in main
